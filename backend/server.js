@@ -38,10 +38,12 @@ app.get('/api/health', (req, res) => {
     res.status(200).send('伺服器運行中');
 });
 
-// SPA fallback - serve index.html for all non-API routes
-app.get('*', (req, res) => {
-    res.sendFile(path.join(publicPath, 'index.html'));
-});
+// SPA fallback - serve index.html for all non-API routes (only in production)
+if (process.env.NODE_ENV === 'production') {
+    app.get('/*', (req, res) => {
+        res.sendFile(path.join(publicPath, 'index.html'));
+    });
+}
 
 // Start the server
 app.listen(PORT, () => {

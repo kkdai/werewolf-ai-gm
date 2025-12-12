@@ -8,11 +8,16 @@ WORKDIR /app/frontend
 # Copy package files first (for better caching)
 COPY frontend/package*.json ./
 
+# Debug: Check what files were copied
+RUN echo "=== Files in frontend directory ===" && ls -la
+
 # Install ALL dependencies (including devDependencies) for build
-RUN npm ci --prefer-offline --no-audit --progress=false
+RUN npm ci --no-audit || (echo "npm ci failed!" && cat /root/.npm/_logs/*-debug-0.log 2>/dev/null && exit 1)
 
 # Verify vite is installed
-RUN ls -la node_modules/.bin/vite || (echo "ERROR: vite not found!" && exit 1)
+RUN echo "=== Checking vite installation ===" && \
+    ls -la node_modules/.bin/ && \
+    (ls -la node_modules/.bin/vite || (echo "ERROR: vite not found!" && exit 1))
 
 # Copy frontend source (node_modules already excluded by .dockerignore)
 COPY frontend/ ./

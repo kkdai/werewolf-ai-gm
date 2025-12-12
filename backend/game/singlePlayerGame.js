@@ -141,6 +141,9 @@ async function handleReadyToVote(gameState) {
 async function handleVote(gameState, targetName) {
     let newState = JSON.parse(JSON.stringify(gameState));
 
+    // 清除之前的事件圖片（只在遊戲開始時使用）
+    newState.eventImageUrl = null;
+
     // 找到目標角色
     const targetCharacter = newState.characters.find(c => c.name === targetName);
     if (!targetCharacter) {
@@ -199,9 +202,9 @@ async function handleVote(gameState, targetName) {
     const voteResultNarration = await getGameNarration(voteResultPrompt, `投票結束。${eliminatedName} 被淘汰了。`);
     newState.narrativeLog.push({ sender: 'GM', message: voteResultNarration });
 
-    // 生成事件圖片
-    const eventImagePrompt = `一幅陰鬱、充滿情感的特寫數位繪畫，聚焦於被淘汰角色 '${eliminatedName}' 遺留下來的物品。這個物品，例如一個掉落的掛墜盒或一本磨損的書，象徵著他的角色是 ${eliminatedCharacter.role}。背景模糊而黑暗。`;
-    newState.eventImageUrl = await generateOpeningImage(eventImagePrompt);
+    // 生成投票結果的場景圖片（更新主圖片，不使用 modal）
+    const voteScenePrompt = `黑暗奇幻油畫。場景：村莊廣場上，${eliminatedName} 剛被投票淘汰。倖存的村民們神情複雜，有些人鬆了一口氣，有些人更加恐懼。氣氛悲傷而緊張。`;
+    newState.imageUrl = await generateGameImage(voteScenePrompt);
 
     // 檢查遊戲是否結束
     const aliveWerewolves = newState.characters.filter(c => c.status === 'alive' && c.role === 'Werewolf').length;
@@ -254,8 +257,7 @@ async function progressToNextDay(gameState) {
     const imagePrompt = `黑暗奇幻油畫。倖存的村民們震驚且懷疑地聚集在鎮上的井邊。'${target.name}' 的屍體蓋著布躺在地上。氣氛緊張。`;
     newState.imageUrl = await generateGameImage(imagePrompt);
 
-    const eventImagePrompt = `一幅陰鬱、充滿情感的特寫數位繪畫，聚焦於被淘汰角色 '${target.name}' 遺留下來的物品。這個物品，例如一個掉落的掛墜盒或一本磨損的書，象徵著他的角色是 ${target.role}。背景模糊而黑暗。`;
-    newState.eventImageUrl = await generateGameImage(eventImagePrompt);
+    // eventImageUrl 只在遊戲開始時使用，這裡不再生成
 
     return newState;
 }

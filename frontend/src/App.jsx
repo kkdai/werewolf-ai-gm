@@ -45,11 +45,12 @@ function App() {
       });
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      
+
       const newGameState = await response.json();
       setGameState(newGameState);
-      
-      if (newGameState.eventImageUrl) {
+
+      // 只在遊戲剛開始時顯示 eventImage modal
+      if (action === 'START_GAME' && newGameState.eventImageUrl) {
         setShowEventImage(true);
       }
 

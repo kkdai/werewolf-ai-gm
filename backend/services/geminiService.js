@@ -71,7 +71,6 @@ async function generateGameImage(promptText) {
         const result = await imageModel.generateContent({
             contents: [{ parts: [{ text: promptText }] }],
             generationConfig: {
-                responseMimeType: "image/jpeg",
                 imageConfig: {
                     aspectRatio: "4:3"  // 使用 4:3 比例，較小且適合遊戲
                 }

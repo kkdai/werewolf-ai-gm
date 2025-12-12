@@ -1,7 +1,7 @@
 # Multi-stage build for werewolf-ai-gm
 
 # Stage 1: Build Frontend
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -21,7 +21,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Setup Backend
-FROM node:18-alpine AS backend-builder
+FROM node:20-alpine AS backend-builder
 
 WORKDIR /app/backend
 
@@ -32,7 +32,7 @@ COPY backend/package*.json ./
 RUN npm ci --only=production --prefer-offline --no-audit --progress=false
 
 # Stage 3: Production Image
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 

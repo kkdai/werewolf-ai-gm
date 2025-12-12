@@ -66,7 +66,17 @@ async function generateGameImage(promptText) {
     try {
         console.log("傳送圖片提示到 Gemini 圖片模型 (gemini-2.5-flash-image)：", promptText.substring(0, 100) + "...");
 
-        const result = await imageModel.generateContent([promptText]);
+        // 使用較小的圖片尺寸以加快生成速度
+        // aspectRatio: 4:3 (適合遊戲場景顯示)
+        const result = await imageModel.generateContent({
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: {
+                responseMimeType: "image/jpeg",
+                imageConfig: {
+                    aspectRatio: "4:3"  // 使用 4:3 比例，較小且適合遊戲
+                }
+            }
+        });
         const response = await result.response;
 
         // 檢查 API 是否回傳了資料

@@ -1,0 +1,251 @@
+/* frontend/src/App.css */
+
+.App {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+/* --- Lobby Styles --- */
+.lobby-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 3rem;
+  background-color: #242424;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid #444;
+}
+
+.lobby-container h1 {
+  margin: 0;
+  color: #00aaff;
+}
+.lobby-container p {
+  margin: 0;
+  color: #aaa;
+}
+.lobby-container input {
+  width: 250px;
+  text-align: center;
+}
+
+/* --- Game Container Styles --- */
+.game-container {
+  display: grid;
+  grid-template-columns: 280px 1fr; /* Sidebar and Main Content */
+  grid-template-rows: 1fr;
+  width: 100%;
+  height: 100%;
+  gap: 1rem;
+  max-width: 1400px;
+  max-height: 95vh;
+}
+
+/* --- Sidebar (Survivors List) --- */
+.sidebar {
+  background: #242424;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border: 1px solid #444;
+}
+.sidebar h2 {
+  margin-top: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #555;
+  color: #00aaff;
+}
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+}
+.sidebar li {
+  padding: 0.5rem 0;
+  color: #ddd;
+}
+.sidebar li.dead {
+  text-decoration: line-through;
+  color: #777;
+}
+.sidebar li span {
+  color: #00ffaa;
+  font-weight: bold;
+}
+.game-info {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #555;
+  color: #bbb;
+}
+
+/* --- Main Content Area --- */
+.main-content {
+  background: #242424;
+  border-radius: 8px;
+  padding: 1rem;
+  display: grid;
+  grid-template-rows: minmax(300px, 40%) auto 60px; /* Illustration, Log, Input */
+  gap: 1rem;
+  overflow: hidden;
+  border: 1px solid #444;
+}
+
+/* --- Illustration Area --- */
+.illustration-area {
+  border-radius: 6px;
+  background-color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative; /* Needed for loading overlay */
+}
+.illustration-area img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Cover the area without distortion */
+}
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  z-index: 10;
+}
+.placeholder-image {
+  color: #888;
+  text-align: center;
+  padding: 1rem;
+}
+
+/* --- Narrative Log (Chat Window) --- */
+.narrative-log {
+  background: #333;
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-y: auto;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.log-entry {
+  max-width: 90%;
+}
+.log-entry strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+.log-entry p {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: #444;
+  line-height: 1.5;
+  white-space: pre-wrap; /* Preserve line breaks from Gemini */
+}
+.log-entry.gm strong {
+  color: #00aaff; /* GM blue */
+}
+.log-entry.player {
+  align-self: flex-end;
+  text-align: right;
+}
+.log-entry.player p {
+  background: #007bff;
+  color: white;
+}
+
+/* --- Player Input Area --- */
+.player-input-area button {
+  width: 100%;
+  padding: 1em;
+}
+
+.error-message {
+  color: #ff4d4d;
+}
+
+/* --- Image Modal Styles --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  position: relative;
+  max-width: 80%;
+  max-height: 80%;
+  background: #242424;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid #555;
+}
+
+.modal-content img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.player-input-area.voting {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.player-input-area.voting p {
+  width: 100%;
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+  font-style: italic;
+  color: #00aaff;
+}
+.player-input-area.voting button {
+  flex-grow: 1;
+}
+
+.close-button {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  z-index: 1001;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  line-height: 40px;
+  font-size: 1.2rem;
+}
+.close-button:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}

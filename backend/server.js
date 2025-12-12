@@ -1,6 +1,7 @@
 // werewolf-ai-gm/backend/server.js
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { handleGameAction } = require('./game/singlePlayerGame');
 
 const app = express();
@@ -9,6 +10,10 @@ const PORT = process.env.PORT || 4000;
 // Middleware
 app.use(cors()); // Allow requests from our frontend
 app.use(express.json()); // Parse JSON bodies
+
+// Serve static files from frontend build (for production deployment)
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
 
 // --- Routes ---
 
@@ -33,6 +38,10 @@ app.get('/api/health', (req, res) => {
     res.status(200).send('伺服器運行中');
 });
 
+// SPA fallback - serve index.html for all non-API routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+});
 
 // Start the server
 app.listen(PORT, () => {

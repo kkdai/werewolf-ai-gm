@@ -75,6 +75,26 @@
 4.  遊戲開始後，每個玩家會收到自己的角色資訊。
 5.  目前遊戲會進入夜晚階段，但夜晚的具體行動和日間討論功能尚未完全實作，這是接下來的開發目標。
 
+## 部署到 GCP Cloud Run
+
+本專案已準備好部署到 Google Cloud Platform 的 Cloud Run。
+
+### 快速部署
+
+參考完整的部署指南：
+- 📋 [部署檢查清單](./DEPLOYMENT_CHECKLIST.md) - 逐步檢查清單
+- 📖 [詳細部署文檔](./DEPLOYMENT.md) - 完整指南和故障排除
+
+### 部署方式
+
+1. **自動部署**（推薦）：連接 GitHub 到 Cloud Build，每次推送自動部署
+2. **手動部署**：使用 `gcloud` 指令從本地部署
+
+所需檔案：
+- `Dockerfile` - 容器化應用程式
+- `cloudbuild.yaml` - Cloud Build 配置
+- `.dockerignore` - 排除不必要的檔案
+
 ## 未來計畫 (第二階段)
 
 *   實現夜晚行動邏輯 (狼人行動、預言家驗人、女巫藥水等)。

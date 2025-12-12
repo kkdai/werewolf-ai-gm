@@ -1,0 +1,54 @@
+# Node modules
+node_modules
+*/node_modules
+**/node_modules
+
+# Logs
+*.log
+npm-debug.log*
+backend-nohup.log
+backend.log
+frontend-nohup.log
+frontend.log
+
+# Environment files (will be set via Cloud Run)
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs (will be rebuilt in container)
+frontend/dist
+frontend/build
+
+# Documentation
+README.md
+*.md
+!CLAUDE.md
+
+# Test files
+*.test.js
+*.spec.js
+__tests__
+coverage
+
+# Development files
+.prettierrc
+.eslintrc*
+eslint.config.js

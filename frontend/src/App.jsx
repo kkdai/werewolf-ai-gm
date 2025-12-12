@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-const API_URL = 'http://localhost:4000/api/game/action';
+// Use relative URL in production, localhost in development
+const API_URL = import.meta.env.PROD
+  ? '/api/game/action'
+  : 'http://localhost:4000/api/game/action';
 
 // --- Image Modal Component ---
 const ImageModal = ({ src, onClose }) => {

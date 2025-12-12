@@ -9,9 +9,15 @@ async function handleGameAction({ action, payload, gameState }) {
     switch (action) {
         case 'START_GAME':
             return await initializeGame(payload.playerName);
-        
+
         case 'PLAYER_TALK':
             return await handlePlayerTalk(gameState, payload.text);
+
+        case 'READY_TO_VOTE':
+            return await handleReadyToVote(gameState);
+
+        case 'VOTE':
+            return await handleVote(gameState, payload.target);
 
         case 'PROGRESS_TO_NEXT_DAY': // We keep this for now for simple testing
             return await progressToNextDay(gameState);
@@ -103,7 +109,7 @@ ${characterDescriptions}
 1. 選擇2到3位AI角色對玩家的發言做出回應。
 2. 他們的回應必須完全符合自己的性格。
 3. 讓他們之間可能產生一些簡短的互動（例如，亞瑟可能反駁馬可的自私言論）。
-4. 最後，用GM的身份做一個簡短的總結，並提示玩家下一步該做什麼（例如：提醒玩家思考並準備投票）。
+4. 最後，用GM的身份做一個簡短的總結，鼓勵繼續討論或準備進入投票。
 5. 你的回覆必須是純粹的對話和GM旁白，不要有額外的格式。直接返回對話內容。`;
 
     const discussionResult = await getGameNarration(discussionPrompt, "AI 角色們陷入了沉默...");
@@ -113,7 +119,112 @@ ${characterDescriptions}
     const imagePrompt = `黑暗奇幻油畫。場景：在村莊廣場上，存活的村民們正在激烈地討論，氣氛緊張。根據對話'${playerText}'，'${discussionResult}'，有些人在指責，有些人很害怕。`;
     newState.imageUrl = await generateGameImage(imagePrompt);
 
-    newState.phase = 'voting'; // Transition to voting phase
+    // 保持在討論階段，不自動切換到投票
+    // newState.phase = 'voting'; // Removed - player will choose when to vote
+
+    return newState;
+}
+
+async function handleReadyToVote(gameState) {
+    let newState = JSON.parse(JSON.stringify(gameState));
+
+    // GM 宣布進入投票階段
+    newState.narrativeLog.push({
+        sender: 'GM',
+        message: '討論時間結束。現在進入投票階段，請選擇你認為最可疑的人進行投票淘汰。'
+    });
+
+    newState.phase = 'voting';
+    return newState;
+}
+
+async function handleVote(gameState, targetName) {
+    let newState = JSON.parse(JSON.stringify(gameState));
+
+    // 找到目標角色
+    const targetCharacter = newState.characters.find(c => c.name === targetName);
+    if (!targetCharacter) {
+        newState.narrativeLog.push({
+            sender: 'GM',
+            message: `錯誤：找不到名為 ${targetName} 的角色。`
+        });
+        return newState;
+    }
+
+    // 記錄玩家的投票
+    const humanPlayer = newState.characters.find(c => c.isHuman);
+    newState.narrativeLog.push({
+        sender: humanPlayer.name,
+        message: `我投票給 ${targetName}。`
+    });
+
+    // AI 投票邏輯（簡化版：隨機投票，未來可以改進）
+    const aliveAI = newState.characters.filter(c => !c.isHuman && c.status === 'alive');
+    const allVotableTargets = newState.characters.filter(c => c.status === 'alive');
+
+    // 統計投票
+    const voteCount = {};
+    allVotableTargets.forEach(char => {
+        voteCount[char.name] = 0;
+    });
+
+    // 玩家投票
+    voteCount[targetName] += 1;
+
+    // AI 投票（簡化：隨機選擇）
+    aliveAI.forEach(ai => {
+        const aiTargets = allVotableTargets.filter(t => t.name !== ai.name);
+        const aiTarget = aiTargets[Math.floor(Math.random() * aiTargets.length)];
+        voteCount[aiTarget.name] += 1;
+    });
+
+    // 找出得票最高的角色
+    let maxVotes = 0;
+    let eliminatedName = null;
+    for (const [name, votes] of Object.entries(voteCount)) {
+        if (votes > maxVotes) {
+            maxVotes = votes;
+            eliminatedName = name;
+        }
+    }
+
+    // 淘汰得票最高的角色
+    const eliminatedCharacter = newState.characters.find(c => c.name === eliminatedName);
+    eliminatedCharacter.status = 'dead';
+    newState.survivors = newState.characters.filter(c => c.status === 'alive').map(c => c.name);
+
+    // 生成投票結果敘述
+    const voteResultPrompt = `你是狼人殺的遊戲主持人。投票結果：${eliminatedName} 被投票淘汰了，他的角色是 ${eliminatedCharacter.role}。
+請用2-3句話描述這個結果，營造戲劇性的氣氛。`;
+    const voteResultNarration = await getGameNarration(voteResultPrompt, `投票結束。${eliminatedName} 被淘汰了。`);
+    newState.narrativeLog.push({ sender: 'GM', message: voteResultNarration });
+
+    // 生成事件圖片
+    const eventImagePrompt = `一幅陰鬱、充滿情感的特寫數位繪畫，聚焦於被淘汰角色 '${eliminatedName}' 遺留下來的物品。這個物品，例如一個掉落的掛墜盒或一本磨損的書，象徵著他的角色是 ${eliminatedCharacter.role}。背景模糊而黑暗。`;
+    newState.eventImageUrl = await generateOpeningImage(eventImagePrompt);
+
+    // 檢查遊戲是否結束
+    const aliveWerewolves = newState.characters.filter(c => c.status === 'alive' && c.role === 'Werewolf').length;
+    const aliveVillagers = newState.characters.filter(c => c.status === 'alive' && c.role !== 'Werewolf').length;
+
+    if (aliveWerewolves === 0) {
+        newState.gameOver = true;
+        newState.winner = 'Villagers';
+        newState.narrativeLog.push({ sender: 'GM', message: '所有狼人都被淘汰了！村民獲勝！' });
+    } else if (aliveWerewolves >= aliveVillagers) {
+        newState.gameOver = true;
+        newState.winner = 'Werewolves';
+        newState.narrativeLog.push({ sender: 'GM', message: '狼人數量已經超過或等於村民！狼人獲勝！' });
+    } else {
+        // 遊戲繼續，進入下一天
+        newState.day += 1;
+        newState.phase = 'discussion';
+        newState.narrativeLog.push({ sender: 'GM', message: `第 ${newState.day} 天開始。倖存者們再次聚集，繼續尋找真相...` });
+
+        // 生成新一天的場景圖片
+        const newDayImagePrompt = `黑暗奇幻油畫。倖存的村民們聚集在村莊廣場，第 ${newState.day} 天的氣氛更加緊張。每個人都在互相懷疑。`;
+        newState.imageUrl = await generateGameImage(newDayImagePrompt);
+    }
 
     return newState;
 }

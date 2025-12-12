@@ -26,6 +26,7 @@ function App() {
   const [error, setError] = useState(null);
   const [showEventImage, setShowEventImage] = useState(true);
   const [playerInputText, setPlayerInputText] = useState("");
+  const [selectedVoteTarget, setSelectedVoteTarget] = useState("");
 
   const narrativeLogRef = useRef(null);
 
@@ -72,33 +73,66 @@ function App() {
     }
   };
 
+  const handleReadyToVote = () => {
+    if (!isLoading) {
+      sendAction('READY_TO_VOTE', {});
+    }
+  };
+
+  const handleVote = () => {
+    if (selectedVoteTarget && !isLoading) {
+      sendAction('VOTE', { target: selectedVoteTarget });
+      setSelectedVoteTarget(""); // Clear selection after voting
+    } else {
+      alert('請選擇一位玩家投票');
+    }
+  };
+
   const renderPlayerInput = () => {
     if (gameState.phase === 'discussion') {
       return (
         <div className="player-input-area">
-          <input 
-            type="text" 
-            placeholder="輸入你的發言..." 
+          <input
+            type="text"
+            placeholder="輸入你的發言..."
             value={playerInputText}
             onChange={(e) => setPlayerInputText(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handlePlayerTalk()}
-            disabled={isLoading} 
+            disabled={isLoading}
           />
-          <button onClick={handlePlayerTalk} disabled={isLoading}>
-            {isLoading ? 'AI 正在思考...' : '發言'}
-          </button>
+          <div className="discussion-buttons">
+            <button onClick={handlePlayerTalk} disabled={isLoading || !playerInputText.trim()}>
+              {isLoading ? 'AI 正在思考...' : '繼續討論'}
+            </button>
+            <button onClick={handleReadyToVote} disabled={isLoading} className="vote-button">
+              準備投票
+            </button>
+          </div>
         </div>
       );
     }
     if (gameState.phase === 'voting') {
+      const humanPlayer = gameState.characters.find(c => c.isHuman);
+      const votableTargets = gameState.survivors.filter(name => name !== humanPlayer.name);
+
       return (
         <div className="player-input-area voting">
-          <p>投票階段：選擇一位玩家投票</p>
-          {gameState.survivors.filter(name => name !== gameState.characters.find(c => c.isHuman).name).map(name => (
-            <button key={name} disabled={isLoading} onClick={() => alert(`(功能開發中) 你投票給了 ${name}`)}>
-              {name}
+          <p>投票階段：選擇一位玩家投票淘汰</p>
+          <div className="vote-controls">
+            <select
+              value={selectedVoteTarget}
+              onChange={(e) => setSelectedVoteTarget(e.target.value)}
+              disabled={isLoading}
+            >
+              <option value="">-- 選擇投票對象 --</option>
+              {votableTargets.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+            <button onClick={handleVote} disabled={isLoading || !selectedVoteTarget}>
+              {isLoading ? '正在處理...' : '確認投票'}
             </button>
-          ))}
+          </div>
         </div>
       );
     }

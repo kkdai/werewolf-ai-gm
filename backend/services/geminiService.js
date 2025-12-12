@@ -1,11 +1,13 @@
 // werewolf-ai-gm/backend/services/geminiService.js
 require('dotenv').config();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 let textModel;
 let imageModel;
+let imagenClient;
 
 if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_API_KEY" || GEMINI_API_KEY === "your_gemini_api_key_here") {
   console.error("******************************************************************");
@@ -18,14 +20,18 @@ if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_API_KEY" || GEMINI_API_KEY === "
   try {
     // 使用 Gemini 2.0 Flash 模型處理文字
     textModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-    // 使用 Gemini 2.5 Flash Image 模型處理圖片生成
+    // 使用 Gemini 2.5 Flash Image 模型處理遊戲中圖片生成
     imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
+    // 使用 Imagen 4.0 模型處理開場圖片生成（更快）
+    imagenClient = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
     console.log("✓ Gemini 文字模型初始化成功 (gemini-2.0-flash)");
     console.log("✓ Gemini 圖片模型初始化成功 (gemini-2.5-flash-image)");
+    console.log("✓ Imagen 圖片模型初始化成功 (imagen-4.0-generate-001)");
   } catch (error) {
     console.error("初始化 GoogleGenerativeAI 失敗。請檢查您的 API 金鑰。", error);
     textModel = null;
     imageModel = null;
+    imagenClient = null;
   }
 }
 
@@ -66,13 +72,13 @@ async function generateGameImage(promptText) {
     try {
         console.log("傳送圖片提示到 Gemini 圖片模型 (gemini-2.5-flash-image)：", promptText.substring(0, 100) + "...");
 
-        // 使用較小的圖片尺寸以加快生成速度
-        // aspectRatio: 4:3 (適合遊戲場景顯示)
+        // 使用最小的圖片尺寸以加快生成速度
+        // aspectRatio: 1:1 (正方形，最小最快)
         const result = await imageModel.generateContent({
             contents: [{ parts: [{ text: promptText }] }],
             generationConfig: {
                 imageConfig: {
-                    aspectRatio: "4:3"  // 使用 4:3 比例，較小且適合遊戲
+                    aspectRatio: "1:1"  // 使用 1:1 比例（正方形），最小最快
                 }
             }
         });
@@ -120,6 +126,54 @@ async function generateGameImage(promptText) {
 }
 
 /**
+ * Generates an opening scene image using Imagen 4.0 for faster generation.
+ * This is optimized for initial game images where speed is important.
+ * @param {string} promptText - The prompt for image generation.
+ * @returns {Promise<string>} - A Data URL string (e.g., "data:image/png;base64,...").
+ */
+async function generateOpeningImage(promptText) {
+    if (!imagenClient) {
+        console.log("Imagen 模型不可用，使用佔位符圖片。");
+        return createPlaceholderImage();
+    }
+    try {
+        console.log("傳送圖片提示到 Imagen 模型 (imagen-4.0-generate-001)：", promptText.substring(0, 100) + "...");
+
+        const result = await imagenClient.models.generate({
+            model: "imagen-4.0-generate-001",
+            prompt: promptText,
+            config: {
+                numberOfImages: 1,
+                aspectRatio: "1:1",  // 正方形，最快速度
+                outputFormat: "image/png"
+            }
+        });
+
+        // Imagen API 回傳格式處理
+        if (result && result.generatedImages && result.generatedImages.length > 0) {
+            const image = result.generatedImages[0];
+
+            // 根據回傳格式處理
+            if (image.image && image.image.imageBytes) {
+                const base64Data = image.image.imageBytes;
+                const mimeType = 'image/png';
+                console.log(`✓ 從 Imagen 模型成功接收到圖片資料`);
+                return `data:${mimeType};base64,${base64Data}`;
+            }
+        }
+
+        console.log("ℹ Imagen API 回應中未找到圖片資料，使用佔位符。");
+        return createPlaceholderImage();
+
+    } catch (error) {
+        console.error("呼叫 Imagen API 時發生錯誤：", error.message);
+        console.log("ℹ 降級使用 Gemini 圖片模型");
+        // 降級到 Gemini 圖片模型
+        return await generateGameImage(promptText);
+    }
+}
+
+/**
  * Creates a placeholder SVG image.
  * @returns {string} - A Data URL string with a placeholder SVG image.
  */
@@ -151,4 +205,5 @@ function createPlaceholderImage() {
 module.exports = {
   getGameNarration,
   generateGameImage,
+  generateOpeningImage,
 };

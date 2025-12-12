@@ -9,7 +9,8 @@ const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(cors()); // Allow requests from our frontend
-app.use(express.json()); // Parse JSON bodies
+app.use(express.json({ limit: '50mb' })); // Parse JSON bodies with larger limit for images
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // Parse URL-encoded bodies
 
 // Serve static files from frontend build (for production deployment)
 const publicPath = path.join(__dirname, 'public');

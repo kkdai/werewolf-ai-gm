@@ -1,6 +1,6 @@
 // werewolf-ai-gm/backend/game/singlePlayerGame.js
 const { generateAICharacters, assignRoles } = require('./gameLogic');
-const { getGameNarration, generateGameImage } = require('../services/geminiService');
+const { getGameNarration, generateGameImage, generateOpeningImage } = require('../services/geminiService');
 
 const TOTAL_PLAYERS = 12;
 const AI_PLAYER_COUNT = 11;
@@ -67,15 +67,15 @@ async function initializeGame(humanPlayerName = "玩家") {
     initialGameState.narrativeLog.push({ sender: 'GM', message: `第一天的${time}，你們聚集於此...` });
 
 
-    // 5. Dynamically generate the main image prompt
+    // 5. Dynamically generate the main image prompt (使用 Imagen 以獲得更快的生成速度)
     const imagePrompt = `一張精美的狼人殺主題插畫。風格為黑暗奇幻油畫。
     場景：季節是'${season}'，時間是'${time}'。在'${location}'，包含玩家'${humanPlayerName}'在內的12名角色聚集在一起。他們神情可疑，氣氛緊張。`;
-    initialGameState.imageUrl = await generateGameImage(imagePrompt);
+    initialGameState.imageUrl = await generateOpeningImage(imagePrompt);
 
-    // 6. Generate event image (e.g., player's role reveal)
+    // 6. Generate event image (e.g., player's role reveal) (使用 Imagen 以獲得更快的生成速度)
     const humanPlayer = characters.find(c => c.isHuman);
     const eventImagePrompt = `一張充滿戲劇性的角色特寫藝術圖。特寫 '${humanPlayer.name}' 的臉，他的角色是 ${humanPlayer.role}。他的表情堅定，背景中巧妙地融入了代表其角色身份的元素。數位藝術風格，高對比度。`;
-    initialGameState.eventImageUrl = await generateGameImage(eventImagePrompt);
+    initialGameState.eventImageUrl = await generateOpeningImage(eventImagePrompt);
 
     return initialGameState;
 }

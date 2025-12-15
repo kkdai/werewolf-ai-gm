@@ -49,7 +49,8 @@ COPY --from=backend-builder /app/backend/node_modules ./node_modules
 # Copy frontend build from builder
 COPY --from=frontend-builder /app/frontend/dist ./public
 
-# Expose port (Cloud Run will inject PORT env variable)
+# Set environment variables
+ENV NODE_ENV=production
 ENV PORT=8080
 EXPOSE 8080
 

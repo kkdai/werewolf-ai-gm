@@ -1,23 +1,18 @@
 # Multi-stage build for werewolf-ai-gm
 
 # Stage 1: Build Frontend
-FROM node:20-alpine AS frontend-builder
+FROM node:20-slim AS frontend-builder
 
 WORKDIR /app/frontend
 
 # Copy package files first (for better caching)
 COPY frontend/package*.json ./
 
-# Debug: Check what files were copied
-RUN echo "=== Files in frontend directory ===" && ls -la
-
 # Install ALL dependencies (including devDependencies) for build
-RUN npm ci --no-audit || (echo "npm ci failed!" && cat /root/.npm/_logs/*-debug-0.log 2>/dev/null && exit 1)
+RUN npm ci
 
 # Verify vite is installed
-RUN echo "=== Checking vite installation ===" && \
-    ls -la node_modules/.bin/ && \
-    (ls -la node_modules/.bin/vite || (echo "ERROR: vite not found!" && exit 1))
+RUN test -f node_modules/.bin/vite || (echo "ERROR: vite not found!" && exit 1)
 
 # Copy frontend source (node_modules already excluded by .dockerignore)
 COPY frontend/ ./
@@ -26,18 +21,18 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Setup Backend
-FROM node:20-alpine AS backend-builder
+FROM node:20-slim AS backend-builder
 
 WORKDIR /app/backend
 
 # Copy backend package files
 COPY backend/package*.json ./
 
-# Install backend dependencies (production only) with explicit settings
-RUN npm ci --only=production --prefer-offline --no-audit --progress=false
+# Install backend dependencies (production only)
+RUN npm ci --only=production
 
 # Stage 3: Production Image
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 

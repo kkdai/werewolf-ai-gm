@@ -8,11 +8,20 @@ WORKDIR /app/frontend
 # Copy package files first (for better caching)
 COPY frontend/package*.json ./
 
+# Upgrade npm first and clean cache to avoid npm ci issues
+RUN npm install -g npm@latest && \
+    npm cache clean --force
+
 # Install ALL dependencies (including devDependencies) for build
-RUN npm ci
+# Use --legacy-peer-deps and --no-audit for more stability in CI
+RUN npm ci --legacy-peer-deps --no-audit || \
+    (echo "First npm ci attempt failed, cleaning and retrying..." && \
+     rm -rf node_modules package-lock.json && \
+     npm install --legacy-peer-deps) && \
+    echo "Dependencies installed successfully"
 
 # Verify vite is installed
-RUN test -f node_modules/.bin/vite || (echo "ERROR: vite not found!" && exit 1)
+RUN test -f node_modules/.bin/vite || (echo "ERROR: vite not found!" && ls -la node_modules/.bin/ && exit 1)
 
 # Copy frontend source (node_modules already excluded by .dockerignore)
 COPY frontend/ ./
@@ -28,8 +37,15 @@ WORKDIR /app/backend
 # Copy backend package files
 COPY backend/package*.json ./
 
+# Upgrade npm and clean cache
+RUN npm install -g npm@latest && \
+    npm cache clean --force
+
 # Install backend dependencies (production only)
-RUN npm ci --only=production
+RUN npm ci --only=production --legacy-peer-deps --no-audit || \
+    (echo "Backend npm ci failed, retrying with npm install..." && \
+     npm install --only=production --legacy-peer-deps) && \
+    echo "Backend dependencies installed successfully"
 
 # Stage 3: Production Image
 FROM node:20-slim

@@ -41,12 +41,32 @@ app.get('/api/health', (req, res) => {
 
 // SPA fallback - serve index.html for all non-API routes (only in production)
 if (process.env.NODE_ENV === 'production') {
-    app.get('/*', (req, res) => {
+    app.use((req, res, next) => {
+        // Skip if it's an API route
+        if (req.path.startsWith('/api/')) {
+            return next();
+        }
+        // Serve index.html for all other routes
         res.sendFile(path.join(publicPath, 'index.html'));
     });
 }
 
 // Start the server
 app.listen(PORT, () => {
-    console.log(`伺服器正在監聽連接埠 ${PORT}`);
+    console.log(`Hello from Cloud Run! The container started successfully and is listening for HTTP requests on port ${PORT}`);
+    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`Public path: ${publicPath}`);
+
+    // Log files in public directory for debugging
+    const fs = require('fs');
+    try {
+        const files = fs.readdirSync(publicPath);
+        console.log(`Files in public directory: ${files.join(', ')}`);
+        if (files.includes('assets')) {
+            const assetFiles = fs.readdirSync(path.join(publicPath, 'assets'));
+            console.log(`Files in assets directory: ${assetFiles.join(', ')}`);
+        }
+    } catch (err) {
+        console.error(`Error reading public directory: ${err.message}`);
+    }
 });

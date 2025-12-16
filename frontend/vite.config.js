@@ -7,4 +7,11 @@ export default defineConfig({
   server: {
     port: 8080,
   },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    emptyOutDir: true,
+    sourcemap: false,
+  },
+  base: '/', // Ensure assets are loaded from root
 })

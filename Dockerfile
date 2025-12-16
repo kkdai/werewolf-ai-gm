@@ -8,6 +8,11 @@ WORKDIR /app/frontend
 # Copy package files first (for better caching)
 COPY frontend/package*.json ./
 
+# Upgrade npm to fix "Exit handler never called!" bug in npm 10.8.2
+# npm 11 is more stable in Cloud Build environments
+RUN npm install -g npm@latest && \
+    echo "Upgraded to npm $(npm --version)"
+
 # Debug: Show npm and node versions
 RUN node --version && npm --version
 
@@ -33,6 +38,10 @@ WORKDIR /app/backend
 
 # Copy backend package files
 COPY backend/package*.json ./
+
+# Upgrade npm to fix "Exit handler never called!" bug in npm 10.8.2
+RUN npm install -g npm@latest && \
+    echo "Upgraded to npm $(npm --version)"
 
 # Debug: Show npm and node versions
 RUN node --version && npm --version

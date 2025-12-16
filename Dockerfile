@@ -8,12 +8,16 @@ WORKDIR /app/frontend
 # Copy package files first (for better caching)
 COPY frontend/package*.json ./
 
-# Use npm install directly (more stable in CI than npm ci)
-RUN npm install --legacy-peer-deps && \
-    echo "✓ Frontend dependencies installed"
+# Debug: Show npm and node versions
+RUN node --version && npm --version
 
-# Verify vite is installed
-RUN test -f node_modules/.bin/vite || (echo "ERROR: vite not found!" && ls -la node_modules/.bin/ && exit 1)
+# Install dependencies with enhanced error handling
+# npm ci is more reliable in CI environments than npm install
+RUN set -e && \
+    npm ci --legacy-peer-deps && \
+    test -d node_modules && \
+    test -f node_modules/.bin/vite && \
+    echo "✓ Frontend dependencies installed (vite: $(node_modules/.bin/vite --version))"
 
 # Copy frontend source (node_modules already excluded by .dockerignore)
 COPY frontend/ ./
@@ -30,9 +34,14 @@ WORKDIR /app/backend
 # Copy backend package files
 COPY backend/package*.json ./
 
-# Install production dependencies only using npm install
-# More stable than npm ci in Cloud Build environments
-RUN npm install --omit=dev --legacy-peer-deps && \
+# Debug: Show npm and node versions
+RUN node --version && npm --version
+
+# Install production dependencies with enhanced error handling
+# npm ci is more reliable in CI environments than npm install
+RUN set -e && \
+    npm ci --omit=dev --legacy-peer-deps && \
+    test -d node_modules && \
     echo "✓ Backend dependencies installed"
 
 # Stage 3: Production Image
